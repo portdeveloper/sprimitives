@@ -6,6 +6,7 @@ import "forge-std/Test.sol";
 type Whatever is uint256;
 
 type ptr is bytes32;
+
 using Pointers for ptr;
 // using {$$ as +} for ptr global;
 
@@ -71,7 +72,20 @@ library Pointers {
         return loc;
     }
 
+    function store(ptr loc, address value) internal returns (ptr) {
+        assembly {
+            sstore(loc, value)
+        }
+        return loc;
+    }
+
     function load(ptr loc) internal view returns (uint256 value) {
+        assembly {
+            value := sload(loc)
+        }
+    }
+
+    function loadAddress(ptr loc) internal view returns (address value) {
         assembly {
             value := sload(loc)
         }
@@ -105,12 +119,9 @@ function str2ptr(bytes memory str) pure returns (ptr p) {
     while (true) {
         require(i - j < 0x20, "str2ptr: string too long");
 
-        if (i == len || str[i] == '.') {
+        if (i == len || str[i] == ".") {
             assembly {
-                token := and(
-                    mload(add(add(str, 0x20), j)),
-                    not(shr(shl(3, sub(i, j)), neg1))
-                )
+                token := and(mload(add(add(str, 0x20), j)), not(shr(shl(3, sub(i, j)), neg1)))
             }
 
             if (j == 0) {
@@ -140,7 +151,7 @@ contract TypedPtrsTest is Test {
         console.log(child.load());
 
         ptr test1 = $("storage").$("is").$("a").$("tree").store(123);
-        ptr test2 = ($("storage").$("is").$("a")+$("tree")).store(456);
+        ptr test2 = ($("storage").$("is").$("a") + $("tree")).store(456);
         ptr test3 = str2ptr("storage.is.a.tree");
         console.log("%x => %d", uint256(ptr.unwrap(test3)), test3.load());
         require(test1 == test2 && test2 == test3, "ptr mismatch");

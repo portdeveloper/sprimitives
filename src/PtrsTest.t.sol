@@ -46,7 +46,6 @@ library Pointers {
     //     bytes32 loc = key.ptr();
     //     value = load_ptr(loc);
     // }
-
 }
 
 function $(bytes32 offset) pure returns (bytes32 ret) {
@@ -63,12 +62,9 @@ function str2ptr(bytes memory str) pure returns (bytes32 ptr) {
     while (true) {
         require(i - j < 0x20, "str2ptr: string too long");
 
-        if (i == len || str[i] == '.') {
+        if (i == len || str[i] == ".") {
             assembly {
-                token := and(
-                    mload(add(add(str, 0x20), j)),
-                    not(shr(shl(3, sub(i, j)), neg1))
-                )
+                token := and(mload(add(add(str, 0x20), j)), not(shr(shl(3, sub(i, j)), neg1)))
             }
 
             if (j == 0) {
@@ -89,6 +85,7 @@ function str2ptr(bytes memory str) pure returns (bytes32 ptr) {
         i++;
     }
 }
+
 contract PtrsTest is Test {
     function setUp() external {
         bytes32 loc = $("root").store(55);
