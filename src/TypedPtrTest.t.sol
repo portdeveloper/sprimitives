@@ -161,4 +161,17 @@ contract TypedPtrsTest is Test {
         console.log($("root").load());
         console.log($("root").$("child").$("leaf").load());
     }
+
+    function testAddressStorage() public {
+        address sampleAddress = 0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2;
+
+        ptr addressLoc = $("addressTestLocation").store(sampleAddress);
+
+        address loadedAddress = addressLoc.loadAddress();
+
+        console.log("Stored Address: %s", sampleAddress);
+        console.log("Loaded Address: %s", loadedAddress);
+
+        require(loadedAddress == sampleAddress, "Address mismatch");
+    }
 }
