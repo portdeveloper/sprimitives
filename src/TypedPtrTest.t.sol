@@ -79,6 +79,24 @@ library Pointers {
         return loc;
     }
 
+    function store(ptr loc, string memory value) internal returns (ptr) {
+        bytes memory data = bytes(value);
+        assembly {
+            sstore(loc, add(data, 0x20)) // store the pointer to the data
+            sstore(add(loc, 1), mload(data)) // store the length of the data
+        }
+        for (uint256 i = 0; i < data.length; i += 32) {
+            bytes32 chunk;
+            assembly {
+                chunk := mload(add(data, add(0x20, i)))
+            }
+            assembly {
+                sstore(add(loc, add(2, div(i, 32))), chunk)
+            }
+        }
+        return loc;
+    }
+
     function load(ptr loc) internal view returns (uint256 value) {
         assembly {
             value := sload(loc)
@@ -89,6 +107,26 @@ library Pointers {
         assembly {
             value := sload(loc)
         }
+    }
+
+    function loadString(ptr loc) internal view returns (string memory value) {
+        uint256 length;
+        bytes32 dataPointer;
+        assembly {
+            dataPointer := sload(loc)
+            length := sload(add(loc, 1))
+        }
+        bytes memory data = new bytes(length);
+        for (uint256 i = 0; i < length; i += 32) {
+            bytes32 chunk;
+            assembly {
+                chunk := sload(add(loc, add(2, div(i, 32))))
+            }
+            for (uint256 j = 0; j < 32 && i + j < length; j++) {
+                data[i + j] = chunk[j];
+            }
+        }
+        value = string(data);
     }
 
     // function load(ptr key) internal view returns (uint256 value) {
@@ -173,5 +211,20 @@ contract TypedPtrsTest is Test {
         console.log("Loaded Address: %s", loadedAddress);
 
         require(loadedAddress == sampleAddress, "Address mismatch");
+    }
+
+    function testStringStorage() public {
+        string memory sampleString = "hello reader, i hope this message finds you well";
+
+        ptr stringLoc = $("stringTestLocation").store(sampleString);
+
+        string memory loadedString = stringLoc.loadString();
+
+        console.log("Stored String: %s", sampleString);
+        console.log("Loaded String: %s", loadedString);
+
+        require(
+            keccak256(abi.encodePacked(loadedString)) == keccak256(abi.encodePacked(sampleString)), "String mismatch"
+        );
     }
 }
