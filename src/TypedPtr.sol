@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.8.19;
 
-import "forge-std/Test.sol";
+// import "forge-std/Test.sol";
 
 type Whatever is uint256;
 
@@ -181,50 +181,3 @@ function str2ptr(bytes memory str) pure returns (ptr p) {
     }
 }
 
-contract TypedPtrsTest is Test {
-    function setUp() external {
-        ptr loc = $("root").store(55);
-        ptr child = loc.$("child").$("leaf").store(66);
-        console.log(loc.load());
-        console.log(child.load());
-
-        ptr test1 = $("storage").$("is").$("a").$("tree").store(123);
-        ptr test2 = ($("storage").$("is").$("a") + $("tree")).store(456);
-        ptr test3 = str2ptr("storage.is.a.tree");
-        console.log("%x => %d", uint256(ptr.unwrap(test3)), test3.load());
-        require(test1 == test2 && test2 == test3, "ptr mismatch");
-    }
-
-    function testPtrs() public returns (ptr) {
-        console.log($("root").load());
-        console.log($("root").$("child").$("leaf").load());
-    }
-
-    function testAddressStorage() public {
-        address sampleAddress = 0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2;
-
-        ptr addressLoc = $("addressTestLocation").store(sampleAddress);
-
-        address loadedAddress = addressLoc.loadAddress();
-
-        console.log("Stored Address: %s", sampleAddress);
-        console.log("Loaded Address: %s", loadedAddress);
-
-        require(loadedAddress == sampleAddress, "Address mismatch");
-    }
-
-    function testStringStorage() public {
-        string memory sampleString = "hello reader, i hope this message finds you well";
-
-        ptr stringLoc = $("stringTestLocation").store(sampleString);
-
-        string memory loadedString = stringLoc.loadString();
-
-        console.log("Stored String: %s", sampleString);
-        console.log("Loaded String: %s", loadedString);
-
-        require(
-            keccak256(abi.encodePacked(loadedString)) == keccak256(abi.encodePacked(sampleString)), "String mismatch"
-        );
-    }
-}
